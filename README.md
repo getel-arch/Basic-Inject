@@ -2,7 +2,7 @@
  
 ## Build
 ```
-gcc .\src\basic_inject.c -o basic_inject.exe -s -m64
+gcc .\src\basic_inject.c -o basic_inject_x64.exe -s -m64
 gcc .\src\test_dll.c -o test.dll -s -m64 -shared
 ```
 
