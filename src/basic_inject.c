@@ -4,34 +4,37 @@
 
 // Function to get the process ID by its name
 DWORD GetProcessIdByName(const char* processName) {
-    PROCESSENTRY32 pe32;
-    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-
-    if (hSnapshot == INVALID_HANDLE_VALUE) {
+    PROCESSENTRY32 pe32 = { sizeof(PROCESSENTRY32) };
+    HANDLE hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hProcessSnap == INVALID_HANDLE_VALUE) {
+        printf("Failed to create process snapshot. Error: %lu\n", GetLastError());
         return 0;
     }
 
-    pe32.dwSize = sizeof(PROCESSENTRY32);
-
-    if (!Process32First(hSnapshot, &pe32)) {
-        CloseHandle(hSnapshot);
-        return 0;
+    DWORD processId = 0;
+    if (Process32First(hProcessSnap, &pe32)) {
+        do {
+            if (_stricmp(pe32.szExeFile, processName) == 0) {
+                processId = pe32.th32ProcessID;
+                break;
+            }
+        } while (Process32Next(hProcessSnap, &pe32));
     }
 
-    do {
-        if (strcmp(pe32.szExeFile, processName) == 0) {
-            CloseHandle(hSnapshot);
-            return pe32.th32ProcessID;
-        }
-    } while (Process32Next(hSnapshot, &pe32));
-
-    CloseHandle(hSnapshot);
-    return 0;
+    CloseHandle(hProcessSnap);
+    return processId;
 }
 
 // Function to inject a DLL into a process
 BOOL InjectDLL(DWORD processID, const char* dllPath) {
-    HANDLE hProcess = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processID);
+
+    // Desired access flags for DLL injection
+    DWORD desiredAccess = PROCESS_CREATE_THREAD |  // Create remote threads
+                          PROCESS_QUERY_INFORMATION |  // Query process information
+                          PROCESS_VM_OPERATION |  // Allocate memory in the process
+                          PROCESS_VM_WRITE;       // Write to process memory
+
+    HANDLE hProcess = OpenProcess(desiredAccess, FALSE, processID);
 
     if (hProcess == NULL) {
         return FALSE;
