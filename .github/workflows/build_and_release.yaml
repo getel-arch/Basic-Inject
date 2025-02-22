@@ -22,6 +22,9 @@ jobs:
     - name: Compile 64bit Binary
       run: gcc .\src\basic_inject.c -o .\output\basic_inject_x64.exe -s -m64
 
+    - name: Compile 64bit dll
+      run: gcc .\src\test_dll.c -o test.dll -s -m64 -shared
+
     - name: Remove Placeholder
       run: Remove-Item output/.gitkeep
 
